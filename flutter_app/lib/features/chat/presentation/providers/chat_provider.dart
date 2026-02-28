@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/api/chat_api.dart';
 import '../../data/mock_data.dart';
 import '../../domain/models.dart';
 
@@ -13,26 +14,50 @@ class TripListNotifier extends StateNotifier<List<Trip>> {
   void addTrip(Trip trip) {
     state = [trip, ...state];
   }
+
+  void updateLastMessage(String tripId, String message) {
+    state = state.map((t) {
+      if (t.id == tripId) {
+        return Trip(
+          id: t.id,
+          userId: t.userId,
+          title: t.title,
+          destination: t.destination,
+          startDate: t.startDate,
+          endDate: t.endDate,
+          travelStyle: t.travelStyle,
+          budgetKrw: t.budgetKrw,
+          status: t.status,
+          createdAt: t.createdAt,
+          updatedAt: DateTime.now(),
+          lastMessage: message,
+        );
+      }
+      return t;
+    }).toList();
+  }
 }
 
 final selectedTripIdProvider = StateProvider<String?>((ref) => null);
 
 final messagesProvider =
     StateNotifierProvider.family<MessagesNotifier, List<Message>, String>(
-  (ref, tripId) => MessagesNotifier(tripId),
+  (ref, tripId) => MessagesNotifier(tripId, ref),
 );
 
 class MessagesNotifier extends StateNotifier<List<Message>> {
   final String tripId;
+  final Ref ref;
 
-  MessagesNotifier(this.tripId)
+  MessagesNotifier(this.tripId, this.ref)
       : super(MockData.messages[tripId] ?? []);
 
   void addMessage(Message message) {
     state = [...state, message];
   }
 
-  void sendUserMessage(String content) {
+  Future<void> sendUserMessage(String content) async {
+    // Add user message
     final userMsg = Message(
       id: const Uuid().v4(),
       tripId: tripId,
@@ -42,37 +67,101 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
     );
     addMessage(userMsg);
 
-    // Simulate assistant typing delay
-    Future.delayed(const Duration(seconds: 1), () {
-      final assistantMsg = Message(
+    // Set typing indicator
+    ref.read(isTypingProvider(tripId).notifier).state = true;
+
+    try {
+      // Build history from recent messages (last 20)
+      final recentMessages = state.length > 20
+          ? state.sublist(state.length - 20)
+          : state;
+      final history = recentMessages
+          .where((m) => m.messageType == MessageType.text && m.role != 'system')
+          .map((m) => {'role': m.role, 'content': m.content})
+          .toList();
+
+      // Call API
+      final responseText = await ChatApi.sendMessage(
+        message: content,
+        history: history,
+      );
+
+      ref.read(isTypingProvider(tripId).notifier).state = false;
+
+      // Check for itinerary JSON
+      final itineraryData = ChatApi.parseItinerary(responseText);
+      if (itineraryData != null) {
+        final cleanText = ChatApi.cleanText(responseText);
+        if (cleanText.isNotEmpty) {
+          addMessage(Message(
+            id: const Uuid().v4(),
+            tripId: tripId,
+            role: 'assistant',
+            content: cleanText,
+            createdAt: DateTime.now(),
+          ));
+        }
+        addMessage(Message(
+          id: const Uuid().v4(),
+          tripId: tripId,
+          role: 'assistant',
+          content: '일정을 짜봤어요! 👇',
+          messageType: MessageType.itineraryCard,
+          metadata: itineraryData,
+          createdAt: DateTime.now(),
+        ));
+        ref.read(tripListProvider.notifier).updateLastMessage(tripId, '일정을 짜봤어요! 🗓️');
+        return;
+      }
+
+      // Check for packing JSON
+      final packingData = ChatApi.parsePacking(responseText);
+      if (packingData != null) {
+        final cleanText = ChatApi.cleanText(responseText);
+        if (cleanText.isNotEmpty) {
+          addMessage(Message(
+            id: const Uuid().v4(),
+            tripId: tripId,
+            role: 'assistant',
+            content: cleanText,
+            createdAt: DateTime.now(),
+          ));
+        }
+        addMessage(Message(
+          id: const Uuid().v4(),
+          tripId: tripId,
+          role: 'assistant',
+          content: '준비물 리스트예요! 🎒',
+          messageType: MessageType.packingCard,
+          metadata: packingData,
+          createdAt: DateTime.now(),
+        ));
+        ref.read(tripListProvider.notifier).updateLastMessage(tripId, '준비물 리스트예요! 🎒');
+        return;
+      }
+
+      // Plain text response
+      addMessage(Message(
         id: const Uuid().v4(),
         tripId: tripId,
         role: 'assistant',
-        content: '네, 알겠어요! 확인해볼게요 😊',
+        content: responseText,
         createdAt: DateTime.now(),
+      ));
+      ref.read(tripListProvider.notifier).updateLastMessage(
+        tripId,
+        responseText.length > 30 ? '${responseText.substring(0, 30)}...' : responseText,
       );
-      addMessage(assistantMsg);
-    });
-  }
-
-  void togglePackingItem(String messageId, String categoryName, int itemIndex) {
-    state = state.map((msg) {
-      if (msg.id != messageId || msg.metadata == null) return msg;
-      final meta = Map<String, dynamic>.from(msg.metadata!);
-      final categories = (meta['categories'] as List).map((c) {
-        final cat = Map<String, dynamic>.from(c);
-        return cat;
-      }).toList();
-      return Message(
-        id: msg.id,
-        tripId: msg.tripId,
-        role: msg.role,
-        content: msg.content,
-        messageType: msg.messageType,
-        metadata: meta,
-        createdAt: msg.createdAt,
-      );
-    }).toList();
+    } catch (e) {
+      ref.read(isTypingProvider(tripId).notifier).state = false;
+      addMessage(Message(
+        id: const Uuid().v4(),
+        tripId: tripId,
+        role: 'assistant',
+        content: '죄송해요, 오류가 발생했어요 😅\n다시 시도해주세요!\n\n(오류: $e)',
+        createdAt: DateTime.now(),
+      ));
+    }
   }
 }
 
