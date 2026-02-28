@@ -29,7 +29,7 @@
 │  │  (채팅+여행DB)│    │  │  │  (LLM 호출+스트리밍)  │ │
 │  └──────────────┘    │  │  └──────────┬───────────┘ │
 │  ┌──────────────┐    │  │             ▼             │
-│  │     Auth      │    │  │     OpenAI / Claude       │
+│  │     Auth      │    │  │     Gemini       │
 │  └──────────────┘    │  │                           │
 │  ┌──────────────┐    │  │  ┌──────────────────────┐ │
 │  │  Realtime     │    │  │  │  Flutter Web 호스팅   │ │
@@ -50,7 +50,7 @@
 | LLM 백엔드 | Vercel Serverless Functions (TypeScript) | 콜드 스타트 빠름, 스트리밍 지원 |
 | 웹 호스팅 | Vercel | Flutter Web 배포 |
 | 라우팅 | go_router | 웹 URL 지원 |
-| LLM | OpenAI GPT-4o / Claude 3.5 Sonnet | 구조화 출력 + 스트리밍 |
+| LLM | Gemini Flash | 구조화 출력 + 스트리밍 |
 
 ## 3. 데이터 모델
 
@@ -393,8 +393,8 @@ baribari/
 | `SUPABASE_URL` | Vercel + Flutter | Supabase 프로젝트 URL |
 | `SUPABASE_ANON_KEY` | Vercel + Flutter | Supabase 공개 키 |
 | `SUPABASE_SERVICE_KEY` | Vercel only | 서버사이드 전용 |
-| `OPENAI_API_KEY` | Vercel only | LLM API 키 |
-| `LLM_MODEL` | Vercel only | 모델명 (gpt-4o 등) |
+| `GEMINI_API_KEY` | Vercel only | LLM API 키 |
+| `LLM_MODEL` | Vercel only | 모델명 (gemini-2.0-flash 등) |
 
 Flutter에서는 `--dart-define`으로 빌드 시 주입:
 ```bash
