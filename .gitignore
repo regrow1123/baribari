@@ -1,0 +1,5 @@
+# Flutter Web build output (built by CI)
+/web/
+
+# Node
+node_modules/
