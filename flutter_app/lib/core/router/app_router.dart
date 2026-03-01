@@ -38,21 +38,41 @@ class HomeScreen extends StatelessWidget {
       return Scaffold(
         backgroundColor: KakaoTheme.background,
         body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('✈️', style: TextStyle(fontSize: 64)),
-              const SizedBox(height: 16),
-              Text(
-                '여행을 선택하거나\n새로운 여행을 시작하세요!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: KakaoTheme.primary.withValues(alpha: 0.6),
-                  height: 1.5,
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-            ],
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.flight_takeoff, size: 64, color: KakaoTheme.myBubble),
+                const SizedBox(height: 16),
+                const Text(
+                  '여행을 선택하거나',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: KakaoTheme.primary),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  '새로운 여행을 시작하세요!',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: KakaoTheme.primary),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '왼쪽 목록에서 여행을 선택하거나\n+ 버튼으로 새 여행을 만들어보세요',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: KakaoTheme.secondary, height: 1.5),
+                ),
+              ],
+            ),
           ),
         ),
       );
