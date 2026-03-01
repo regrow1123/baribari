@@ -107,6 +107,67 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
     );
   }
 
+  Future<String?> _showLinkSheet(BuildContext context, Map<String, dynamic> metadata) async {
+    final days = metadata['days'] as List? ?? [];
+    final items = <Map<String, String>>[];
+
+    for (final day in days) {
+      final d = day as Map<String, dynamic>;
+      final dayNum = d['day'] ?? 0;
+      for (final item in (d['items'] as List? ?? [])) {
+        final i = item as Map<String, dynamic>;
+        items.add({
+          'label': 'Day $dayNum - ${i['title'] ?? ''}',
+          'timeSlot': i['timeSlot'] ?? '',
+        });
+      }
+    }
+
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  '📎 어떤 일정에 연결할까요?',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const Divider(height: 1),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.4),
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.link_off, color: Colors.grey),
+                      title: const Text('연결 안함'),
+                      onTap: () => Navigator.pop(ctx, null),
+                    ),
+                    ...items.map((item) => ListTile(
+                      leading: const Icon(Icons.event, color: Color(0xFF4A90D9)),
+                      title: Text(item['label']!),
+                      subtitle: item['timeSlot']!.isNotEmpty ? Text(item['timeSlot']!) : null,
+                      onTap: () => Navigator.pop(ctx, item['label']),
+                    )),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildChatTab() {
     final messages = ref.watch(messagesProvider(widget.tripId));
     final isTyping = ref.watch(isTypingProvider(widget.tripId));
@@ -153,6 +214,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
                     fileSize: msg.fileSize ?? 0,
                     fileBytes: msg.fileBytes,
                     time: msg.createdAt,
+                    linkedItem: msg.metadata?['linkedItem'],
                   );
                 }
 
@@ -210,17 +272,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
           onSend: (text) {
             ref.read(messagesProvider(widget.tripId).notifier).sendUserMessage(text);
           },
-          onFilePick: (fileName, mimeType, size, bytes) {
+          onFilePick: (fileName, mimeType, size, bytes) async {
+            // Get current itinerary items for linking
+            final messages = ref.read(messagesProvider(widget.tripId));
+            final itineraryMsg = messages.lastWhere(
+              (m) => m.messageType == MessageType.itineraryCard && m.metadata != null,
+              orElse: () => Message(id: '', tripId: '', role: '', content: '', createdAt: DateTime.now()),
+            );
+
+            String? linkedItem;
+            if (itineraryMsg.id.isNotEmpty && itineraryMsg.metadata != null) {
+              linkedItem = await _showLinkSheet(context, itineraryMsg.metadata!);
+            }
+
             final msg = Message(
               id: const Uuid().v4(),
               tripId: widget.tripId,
               role: 'user',
-              content: '📎 $fileName',
+              content: linkedItem != null ? '📎 $fileName → $linkedItem' : '📎 $fileName',
               messageType: MessageType.file,
               fileName: fileName,
               fileType: mimeType,
               fileSize: size,
               fileBytes: bytes,
+              metadata: linkedItem != null ? {'linkedItem': linkedItem} : null,
               createdAt: DateTime.now(),
             );
             ref.read(messagesProvider(widget.tripId).notifier).addMessage(msg);

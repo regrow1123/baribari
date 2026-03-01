@@ -167,6 +167,8 @@ class _DayCard extends StatelessWidget {
             item: item,
             isLast: isLast,
             packingMetadata: packingMetadata,
+            dayLabel: 'Day $dayNum',
+            fileMessages: fileMessages,
           );
         }),
       ],
@@ -195,12 +197,23 @@ class _ItineraryItemTile extends StatelessWidget {
   final Map<String, dynamic> item;
   final bool isLast;
   final Map<String, dynamic>? packingMetadata;
+  final String dayLabel;
+  final List<Message> fileMessages;
 
   const _ItineraryItemTile({
     required this.item,
     required this.isLast,
     this.packingMetadata,
+    required this.dayLabel,
+    this.fileMessages = const [],
   });
+
+  List<Message> get _linkedFiles {
+    final itemLabel = '$dayLabel - ${item['title'] ?? ''}';
+    return fileMessages.where((f) =>
+      f.metadata?['linkedItem'] == itemLabel
+    ).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -354,6 +367,60 @@ class _ItineraryItemTile extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                  ],
+                  // Linked files
+                  if (_linkedFiles.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: _linkedFiles.map((f) {
+                        final isImage = (f.fileType ?? '').startsWith('image/');
+                        return GestureDetector(
+                          onTap: () {
+                            if (isImage && f.fileBytes != null) {
+                              showDialog(
+                                context: context,
+                                builder: (_) => Dialog(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      AppBar(
+                                        title: Text(f.fileName ?? '', style: const TextStyle(fontSize: 14)),
+                                        automaticallyImplyLeading: false,
+                                        actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))],
+                                      ),
+                                      Image.memory(f.fileBytes as Uint8List, fit: BoxFit.contain),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4A90D9).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF4A90D9).withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(isImage ? '🖼️' : '📄', style: const TextStyle(fontSize: 12)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  f.fileName ?? '',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF4A90D9)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
                   // Related packing items

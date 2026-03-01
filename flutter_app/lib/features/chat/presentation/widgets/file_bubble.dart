@@ -8,6 +8,7 @@ class FileBubble extends StatelessWidget {
   final int fileSize;
   final Uint8List? fileBytes;
   final DateTime time;
+  final String? linkedItem;
 
   const FileBubble({
     super.key,
@@ -16,6 +17,7 @@ class FileBubble extends StatelessWidget {
     required this.fileSize,
     this.fileBytes,
     required this.time,
+    this.linkedItem,
   });
 
   @override
@@ -104,6 +106,34 @@ class FileBubble extends StatelessWidget {
               ),
             ),
           ),
+          // Linked item badge
+          if (linkedItem != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4A90D9).withValues(alpha: 0.1),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(KakaoTheme.bubbleRadius),
+                  bottomRight: Radius.circular(4),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.link, size: 12, color: Color(0xFF4A90D9)),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      linkedItem!,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF4A90D9)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
