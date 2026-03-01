@@ -84,7 +84,8 @@ export default async function handler(req: Request): Promise<Response> {
       },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("Chat API error:", err);
+    return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
       status: 500,
       headers: { ...corsHeaders(), "Content-Type": "application/json" },
     });
