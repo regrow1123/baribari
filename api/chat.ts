@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SYSTEM_PROMPT } from "./_lib/prompts.js";
 
 export const config = {
-  maxDuration: 30,
+  runtime: "edge",
 };
 
 export default async function handler(req: Request): Promise<Response> {
@@ -39,6 +39,9 @@ export default async function handler(req: Request): Promise<Response> {
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash",
       systemInstruction: SYSTEM_PROMPT,
+      generationConfig: {
+        maxOutputTokens: 2048,
+      },
     });
 
     // Build chat history
@@ -85,7 +88,7 @@ export default async function handler(req: Request): Promise<Response> {
     });
   } catch (err: any) {
     console.error("Chat API error:", err);
-    return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders(), "Content-Type": "application/json" },
     });
