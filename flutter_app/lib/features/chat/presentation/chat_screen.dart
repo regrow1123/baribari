@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/kakao_theme.dart';
 import '../domain/models.dart';
 import 'providers/chat_provider.dart';
@@ -58,6 +59,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
     return Scaffold(
       appBar: AppBar(
         backgroundColor: KakaoTheme.headerBg,
+        leading: MediaQuery.of(context).size.width <= 768
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.go('/'),
+              )
+            : null,
+        automaticallyImplyLeading: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
