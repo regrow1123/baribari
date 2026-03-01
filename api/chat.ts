@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SYSTEM_PROMPT } from "./_lib/prompts.js";
+import { supabase } from "./_lib/supabase.js";
 
 export const config = {
   runtime: "edge",
@@ -18,7 +19,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const { message, history } = await req.json();
+    const { message, history, tripId } = await req.json();
 
     if (!message || typeof message !== "string") {
       return new Response(JSON.stringify({ error: "message is required" }), {
@@ -52,6 +53,16 @@ export default async function handler(req: Request): Promise<Response> {
 
     const chat = model.startChat({ history: chatHistory });
 
+    // Save user message to DB
+    if (tripId && process.env.SUPABASE_URL) {
+      await supabase.from('messages').insert({
+        trip_id: tripId,
+        role: 'user',
+        content: message,
+        message_type: 'text',
+      });
+    }
+
     // Stream response
     const result = await chat.sendMessageStream(message);
 
@@ -68,6 +79,31 @@ export default async function handler(req: Request): Promise<Response> {
             }
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
+
+          // Save assistant response to DB
+          if (tripId && process.env.SUPABASE_URL) {
+            const fullText = (await result.response).text();
+            // Detect message type from content
+            let messageType = 'text';
+            let metadata = null;
+            if (fullText.includes('```json:itinerary')) {
+              messageType = 'itinerary_card';
+              const match = fullText.match(/```json:itinerary\s*([\s\S]*?)```/);
+              if (match) try { metadata = JSON.parse(match[1]); } catch {}
+            } else if (fullText.includes('```json:packing')) {
+              messageType = 'packing_card';
+              const match = fullText.match(/```json:packing\s*([\s\S]*?)```/);
+              if (match) try { metadata = JSON.parse(match[1]); } catch {}
+            }
+            await supabase.from('messages').insert({
+              trip_id: tripId,
+              role: 'assistant',
+              content: fullText,
+              message_type: messageType,
+              metadata,
+            });
+          }
+
           controller.close();
         } catch (err: any) {
           controller.enqueue(

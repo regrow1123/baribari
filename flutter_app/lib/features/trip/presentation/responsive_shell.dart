@@ -46,18 +46,10 @@ class ResponsiveShell extends ConsumerWidget {
                       const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.add, color: Colors.white),
-                        onPressed: () {
-                          final newTrip = Trip(
-                            id: DateTime.now().millisecondsSinceEpoch.toString(),
-                            userId: 'dummy',
-                            title: '새 여행 계획 ✨',
-                            status: TripStatus.planning,
-                            createdAt: DateTime.now(),
-                            updatedAt: DateTime.now(),
-                          );
-                          ref.read(tripListProvider.notifier).addTrip(newTrip);
-                          ref.read(selectedTripIdProvider.notifier).state = newTrip.id;
-                          context.go('/chat/${newTrip.id}');
+                        onPressed: () async {
+                          final trip = await ref.read(tripListProvider.notifier).createTrip('새 여행 계획 ✨');
+                          ref.read(selectedTripIdProvider.notifier).state = trip.id;
+                          if (context.mounted) context.go('/chat/${trip.id}');
                         },
                       ),
                     ],

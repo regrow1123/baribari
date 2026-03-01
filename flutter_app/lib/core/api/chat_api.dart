@@ -7,6 +7,7 @@ class ChatApi {
   static Future<String> sendMessage({
     required String message,
     required List<Map<String, String>> history,
+    String? tripId,
   }) async {
     final uri = Uri.parse('$_baseUrl/api/chat');
     final response = await http.post(
@@ -15,6 +16,7 @@ class ChatApi {
       body: jsonEncode({
         'message': message,
         'history': history,
+        if (tripId != null) 'tripId': tripId,
       }),
     );
 

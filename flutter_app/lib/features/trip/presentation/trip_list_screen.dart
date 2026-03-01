@@ -42,18 +42,9 @@ class TripListScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: KakaoTheme.myBubble,
-        onPressed: () {
-          final newTrip = Trip(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            userId: 'dummy',
-            title: '새 여행 계획 ✨',
-            status: TripStatus.planning,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            lastMessage: null,
-          );
-          ref.read(tripListProvider.notifier).addTrip(newTrip);
-          context.go('/chat/${newTrip.id}');
+        onPressed: () async {
+          final trip = await ref.read(tripListProvider.notifier).createTrip('새 여행 계획 ✨');
+          if (context.mounted) context.go('/chat/${trip.id}');
         },
         child: const Icon(Icons.add, color: KakaoTheme.primary),
       ),

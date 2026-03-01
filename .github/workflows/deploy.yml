@@ -46,7 +46,9 @@ jobs:
       - name: Deploy to Vercel
         run: |
           vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} \
-            -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+            -e SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            -e SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
