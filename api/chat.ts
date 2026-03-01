@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { SYSTEM_PROMPT } from "./_lib/prompts";
+import { SYSTEM_PROMPT } from "./_lib/prompts.js";
 
 export const config = {
   maxDuration: 30,
