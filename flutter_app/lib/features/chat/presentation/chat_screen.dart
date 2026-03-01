@@ -32,6 +32,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.index == 0) _scrollToBottom();
+    });
   }
 
   @override
