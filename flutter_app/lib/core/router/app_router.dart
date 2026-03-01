@@ -13,14 +13,7 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) {
-            // On desktop, show empty state. On mobile, show trip list.
-            final isWide = MediaQuery.of(context).size.width > 768;
-            if (isWide) {
-              return const _EmptyChat();
-            }
-            return const TripListScreen();
-          },
+          builder: (context, state) => const HomeScreen(),
         ),
         GoRoute(
           path: '/chat/:tripId',
@@ -34,31 +27,36 @@ final appRouter = GoRouter(
   ],
 );
 
-class _EmptyChat extends StatelessWidget {
-  const _EmptyChat();
+/// Shows TripListScreen on mobile, empty state on desktop
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: KakaoTheme.background,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('✈️', style: TextStyle(fontSize: 64)),
-            const SizedBox(height: 16),
-            Text(
-              '여행을 선택하거나\n새로운 여행을 시작하세요!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: KakaoTheme.primary.withValues(alpha: 0.6),
-                height: 1.5,
+    final isWide = MediaQuery.of(context).size.width > 768;
+    if (isWide) {
+      return Scaffold(
+        backgroundColor: KakaoTheme.background,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('✈️', style: TextStyle(fontSize: 64)),
+              const SizedBox(height: 16),
+              Text(
+                '여행을 선택하거나\n새로운 여행을 시작하세요!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: KakaoTheme.primary.withValues(alpha: 0.6),
+                  height: 1.5,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
+    return const TripListScreen();
   }
 }
