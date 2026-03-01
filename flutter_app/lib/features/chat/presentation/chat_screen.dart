@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/kakao_theme.dart';
 import '../domain/models.dart';
 import 'providers/chat_provider.dart';
+import 'package:uuid/uuid.dart';
 import 'widgets/assistant_bubble.dart';
+import 'widgets/file_bubble.dart';
 import 'widgets/input_bar.dart';
 import 'widgets/itinerary_card.dart';
 import 'widgets/itinerary_tab.dart';
@@ -141,6 +143,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
                   );
                 }
 
+                if (msg.role == 'user' && msg.messageType == MessageType.file) {
+                  return FileBubble(
+                    fileName: msg.fileName ?? '',
+                    fileType: msg.fileType ?? '',
+                    fileSize: msg.fileSize ?? 0,
+                    fileBytes: msg.fileBytes,
+                    time: msg.createdAt,
+                  );
+                }
+
                 if (msg.role == 'user') {
                   return UserBubble(content: msg.content, time: msg.createdAt);
                 }
@@ -194,6 +206,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
         InputBar(
           onSend: (text) {
             ref.read(messagesProvider(widget.tripId).notifier).sendUserMessage(text);
+          },
+          onFilePick: (fileName, mimeType, size, bytes) {
+            final msg = Message(
+              id: const Uuid().v4(),
+              tripId: widget.tripId,
+              role: 'user',
+              content: '📎 $fileName',
+              messageType: MessageType.file,
+              fileName: fileName,
+              fileType: mimeType,
+              fileSize: size,
+              fileBytes: bytes,
+              createdAt: DateTime.now(),
+            );
+            ref.read(messagesProvider(widget.tripId).notifier).addMessage(msg);
           },
         ),
       ],

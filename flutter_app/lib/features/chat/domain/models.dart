@@ -1,6 +1,6 @@
 enum TripStatus { planning, active, completed }
 
-enum MessageType { text, itineraryCard, packingCard, system }
+enum MessageType { text, itineraryCard, packingCard, file, system }
 
 class Trip {
   final String id;
@@ -41,6 +41,11 @@ class Message {
   final Map<String, dynamic>? metadata;
   final DateTime createdAt;
 
+  final String? fileName;
+  final String? fileType;
+  final int? fileSize;
+  final dynamic fileBytes; // Uint8List on web
+
   const Message({
     required this.id,
     required this.tripId,
@@ -48,6 +53,10 @@ class Message {
     required this.content,
     this.messageType = MessageType.text,
     this.metadata,
+    this.fileName,
+    this.fileType,
+    this.fileSize,
+    this.fileBytes,
     required this.createdAt,
   });
 }

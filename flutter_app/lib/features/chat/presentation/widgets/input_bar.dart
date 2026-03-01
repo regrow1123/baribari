@@ -1,10 +1,13 @@
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/kakao_theme.dart';
 
 class InputBar extends StatefulWidget {
   final void Function(String) onSend;
+  final void Function(String fileName, String mimeType, int size, Uint8List bytes)? onFilePick;
 
-  const InputBar({super.key, required this.onSend});
+  const InputBar({super.key, required this.onSend, this.onFilePick});
 
   @override
   State<InputBar> createState() => _InputBarState();
@@ -28,6 +31,41 @@ class _InputBarState extends State<InputBar> {
     setState(() => _hasText = false);
   }
 
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      withData: true,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      if (file.bytes != null) {
+        final mimeType = _getMimeType(file.extension ?? '');
+        widget.onFilePick?.call(
+          file.name,
+          mimeType,
+          file.size,
+          file.bytes!,
+        );
+      }
+    }
+  }
+
+  String _getMimeType(String ext) {
+    switch (ext.toLowerCase()) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'pdf':
+        return 'application/pdf';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -37,15 +75,14 @@ class _InputBarState extends State<InputBar> {
         top: false,
         child: Row(
           children: [
-            // Attachment button (for file upload - v2)
             IconButton(
               icon: const Icon(Icons.add, color: KakaoTheme.secondary),
-              onPressed: () {},
+              onPressed: _pickFile,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              tooltip: '파일 첨부 (JPG, PNG, PDF)',
             ),
             const SizedBox(width: 4),
-            // Text input
             Expanded(
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 100),
@@ -70,7 +107,6 @@ class _InputBarState extends State<InputBar> {
               ),
             ),
             const SizedBox(width: 8),
-            // Send button
             GestureDetector(
               onTap: _hasText ? _send : null,
               child: Container(
