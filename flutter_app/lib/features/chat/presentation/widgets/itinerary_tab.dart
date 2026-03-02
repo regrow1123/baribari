@@ -385,16 +385,16 @@ class _ItineraryItemTile extends StatelessWidget {
                         return GestureDetector(
                           onTap: () {
                             if (isImage && f.fileBytes != null) {
-                              showDialog(
+                              showDialog(useRootNavigator: false, 
                                 context: context,
-                                builder: (_) => Dialog(
+                                builder: (dialogCtx) => Dialog(
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       AppBar(
                                         title: Text(f.fileName ?? '', style: const TextStyle(fontSize: 14)),
                                         automaticallyImplyLeading: false,
-                                        actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))],
+                                        actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(dialogCtx))],
                                       ),
                                       Image.memory(f.fileBytes as Uint8List, fit: BoxFit.contain),
                                     ],
@@ -590,9 +590,9 @@ class _FileChip extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         if (isImage && file.fileBytes != null) {
-          showDialog(
+          showDialog(useRootNavigator: false, 
             context: context,
-            builder: (_) => Dialog(
+            builder: (dialogCtx) => Dialog(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -600,7 +600,7 @@ class _FileChip extends StatelessWidget {
                     title: Text(file.fileName ?? '', style: const TextStyle(fontSize: 14)),
                     automaticallyImplyLeading: false,
                     actions: [
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(dialogCtx)),
                     ],
                   ),
                   Image.memory(file.fileBytes as Uint8List, fit: BoxFit.contain),
@@ -681,16 +681,16 @@ class _DbFileChip extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         if (url != null) {
-          showDialog(
+          showDialog(useRootNavigator: false, 
             context: context,
-            builder: (_) => Dialog(
+            builder: (dialogCtx) => Dialog(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   AppBar(
                     title: Text(fileName, style: const TextStyle(fontSize: 14)),
                     automaticallyImplyLeading: false,
-                    actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))],
+                    actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(dialogCtx))],
                   ),
                   if (isImage) Image.network(url, fit: BoxFit.contain)
                   else Padding(
