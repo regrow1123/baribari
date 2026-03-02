@@ -62,6 +62,13 @@ class TripListNotifier extends StateNotifier<List<Trip>> {
     }
   }
 
+  Future<void> deleteTrip(String tripId) async {
+    try {
+      await TripsApi.deleteTrip(tripId);
+    } catch (_) {}
+    state = state.where((t) => t.id != tripId).toList();
+  }
+
   void updateLastMessage(String tripId, String message) {
     state = state.map((t) {
       if (t.id == tripId) {

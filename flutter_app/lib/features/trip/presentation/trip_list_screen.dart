@@ -52,15 +52,16 @@ class TripListScreen extends ConsumerWidget {
   }
 }
 
-class _TripTile extends StatelessWidget {
+class _TripTile extends ConsumerWidget {
   final Trip trip;
 
   const _TripTile({required this.trip});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
       onTap: () => context.go('/chat/${trip.id}'),
+      onLongPress: () => _showDeleteDialog(context, ref),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: CircleAvatar(
         radius: 24,
@@ -94,6 +95,30 @@ class _TripTile extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           _statusBadge(trip.status),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('여행 삭제'),
+        content: Text('"${trip.title}"을(를) 삭제할까요?\n모든 대화와 일정이 삭제됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(tripListProvider.notifier).deleteTrip(trip.id);
+              Navigator.pop(ctx);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('삭제'),
+          ),
         ],
       ),
     );

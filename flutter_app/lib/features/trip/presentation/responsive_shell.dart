@@ -92,6 +92,27 @@ class ResponsiveShell extends ConsumerWidget {
                             ref.read(selectedTripIdProvider.notifier).state = trip.id;
                             context.go('/chat/${trip.id}');
                           },
+                          onLongPress: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('여행 삭제'),
+                                content: Text('"${trip.title}"을(를) 삭제할까요?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+                                  TextButton(
+                                    onPressed: () {
+                                      ref.read(tripListProvider.notifier).deleteTrip(trip.id);
+                                      Navigator.pop(ctx);
+                                      context.go('/');
+                                    },
+                                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                    child: const Text('삭제'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
