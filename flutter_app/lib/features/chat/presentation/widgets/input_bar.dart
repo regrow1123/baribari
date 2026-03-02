@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,14 +44,50 @@ class _InputBarState extends State<InputBar> {
       final file = result.files.first;
       if (file.bytes != null) {
         final mimeType = _getMimeType(file.extension ?? '');
+        Uint8List bytes = file.bytes!;
+
+        // Resize images > 1MB to keep upload small
+        if (mimeType.startsWith('image/') && bytes.length > 1024 * 1024) {
+          bytes = await _resizeImage(bytes, maxDim: 1920);
+        }
+
         widget.onFilePick?.call(
           file.name,
-          mimeType,
-          file.size,
-          file.bytes!,
+          mimeType.startsWith('image/') ? 'image/jpeg' : mimeType,
+          bytes.length,
+          bytes,
         );
       }
     }
+  }
+
+  Future<Uint8List> _resizeImage(Uint8List bytes, {int maxDim = 1920}) async {
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    final image = frame.image;
+
+    double scale = 1.0;
+    if (image.width > maxDim || image.height > maxDim) {
+      scale = maxDim / (image.width > image.height ? image.width : image.height);
+    }
+
+    final w = (image.width * scale).round();
+    final h = (image.height * scale).round();
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()));
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
+      Paint()..filterQuality = FilterQuality.high,
+    );
+    final picture = recorder.endRecording();
+    final resized = await picture.toImage(w, h);
+    final byteData = await resized.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    resized.dispose();
+    return byteData!.buffer.asUint8List();
   }
 
   String _getMimeType(String ext) {

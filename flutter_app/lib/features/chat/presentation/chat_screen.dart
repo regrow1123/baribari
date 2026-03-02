@@ -326,11 +326,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
             ref.read(messagesProvider(widget.tripId).notifier).sendUserMessage(text);
           },
           onFilePick: (fileName, mimeType, size, bytes) async {
-            // Check file size (5MB limit for base64 upload)
-            if (size > 5 * 1024 * 1024) {
+            // Check file size (3MB limit for base64 upload via CF Pages)
+            if (size > 3 * 1024 * 1024) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('파일 크기가 5MB를 초과합니다'), backgroundColor: Colors.orange),
+                  const SnackBar(content: Text('파일 크기가 3MB를 초과합니다'), backgroundColor: Colors.orange),
                 );
               }
               return;
