@@ -49,32 +49,33 @@ class FileBubble extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image preview
-                  if (isImage && fileBytes != null)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: Image.memory(
-                        fileBytes!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
-                    )
-                  else if (isImage && fileUrl != null)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: Image.network(
-                        fileUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        loadingBuilder: (_, child, progress) {
-                          if (progress == null) return child;
-                          return const SizedBox(
-                            height: 100,
-                            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                          );
-                        },
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  // Image preview (KakaoTalk style: fixed width, proportional height)
+                  if (isImage && (fileBytes != null || fileUrl != null))
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(KakaoTheme.bubbleRadius)
+                          .copyWith(topRight: const Radius.circular(4), bottomLeft: Radius.zero, bottomRight: Radius.zero),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 240, maxHeight: 240),
+                        child: fileBytes != null
+                          ? Image.memory(
+                              fileBytes!,
+                              fit: BoxFit.cover,
+                              width: 240,
+                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            )
+                          : Image.network(
+                              fileUrl!,
+                              fit: BoxFit.cover,
+                              width: 240,
+                              loadingBuilder: (_, child, progress) {
+                                if (progress == null) return child;
+                                return const SizedBox(
+                                  width: 240, height: 160,
+                                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                );
+                              },
+                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            ),
                       ),
                     ),
                   // File info
