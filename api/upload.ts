@@ -47,11 +47,12 @@ export default async function handler(req: Request) {
       .from("attachments")
       .insert({
         trip_id: tripId,
-        message_id: messageId,
+        ...(messageId ? { message_id: messageId } : {}),
         file_name: file.name,
         file_type: file.type,
         file_size: file.size,
         storage_path: storagePath,
+        ...(linkedItem ? { linked_item: linkedItem } : {}),
       })
       .select()
       .single();
