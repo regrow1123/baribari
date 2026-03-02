@@ -7,6 +7,7 @@ class FileBubble extends StatelessWidget {
   final String fileType;
   final int fileSize;
   final Uint8List? fileBytes;
+  final String? fileUrl;
   final DateTime time;
   final String? linkedItem;
 
@@ -16,6 +17,7 @@ class FileBubble extends StatelessWidget {
     required this.fileType,
     required this.fileSize,
     this.fileBytes,
+    this.fileUrl,
     required this.time,
     this.linkedItem,
   });
@@ -55,6 +57,16 @@ class FileBubble extends StatelessWidget {
                         fileBytes!,
                         fit: BoxFit.cover,
                         width: double.infinity,
+                      ),
+                    )
+                  else if (isImage && fileUrl != null)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      child: Image.network(
+                        fileUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),
                   // File info

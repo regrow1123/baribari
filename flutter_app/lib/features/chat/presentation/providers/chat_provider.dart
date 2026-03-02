@@ -136,13 +136,17 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
       final data = await TripsApi.listMessages(tripId);
       state = data.map((d) {
         final msgType = _parseMessageType(d['message_type']);
+        final meta = d['metadata'] != null ? Map<String, dynamic>.from(d['metadata']) : null;
         return Message(
           id: d['id'],
           tripId: tripId,
           role: d['role'],
           content: d['content'] ?? '',
           messageType: msgType,
-          metadata: d['metadata'] != null ? Map<String, dynamic>.from(d['metadata']) : null,
+          fileName: msgType == MessageType.file ? (meta?['fileName'] as String?) : null,
+          fileType: msgType == MessageType.file ? (meta?['fileType'] as String?) : null,
+          fileSize: msgType == MessageType.file ? (meta?['fileSize'] as int?) : null,
+          metadata: meta,
           createdAt: DateTime.parse(d['created_at']),
         );
       }).toList();

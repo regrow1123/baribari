@@ -132,4 +132,23 @@ class TripsApi {
     if (res.statusCode != 200) throw Exception('Failed to load messages');
     return List<Map<String, dynamic>>.from(jsonDecode(res.body));
   }
+
+  static Future<void> postMessage({
+    required String tripId,
+    required String role,
+    required String content,
+    String? messageType,
+    Map<String, dynamic>? metadata,
+  }) async {
+    await http.post(
+      Uri.parse('$_apiBase/api/messages?tripId=$tripId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'role': role,
+        'content': content,
+        if (messageType != null) 'message_type': messageType,
+        if (metadata != null) 'metadata': metadata,
+      }),
+    );
+  }
 }

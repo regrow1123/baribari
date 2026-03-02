@@ -42,7 +42,7 @@ export default async function handler(req: Request) {
           trip_id: tripId,
           role: body.role,
           content: body.content,
-          message_type: body.messageType || 'text',
+          message_type: body.message_type || body.messageType || 'text',
           metadata: body.metadata,
         })
         .select()

@@ -260,11 +260,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
                 }
 
                 if (msg.role == 'user' && msg.messageType == MessageType.file) {
+                  // Find URL from DB attachments if no local bytes
+                  String? fileUrl;
+                  if (msg.fileBytes == null) {
+                    final dbAtts = ref.read(attachmentsProvider(widget.tripId));
+                    final match = dbAtts.where((a) => a['file_name'] == msg.fileName).toList();
+                    if (match.isNotEmpty) fileUrl = match.first['url'] as String?;
+                  }
                   return FileBubble(
                     fileName: msg.fileName ?? '',
                     fileType: msg.fileType ?? '',
                     fileSize: msg.fileSize ?? 0,
                     fileBytes: msg.fileBytes,
+                    fileUrl: fileUrl,
                     time: msg.createdAt,
                     linkedItem: msg.metadata?['linkedItem'],
                   );
@@ -351,6 +359,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
               createdAt: DateTime.now(),
             );
             ref.read(messagesProvider(widget.tripId).notifier).addMessage(msg);
+
+            // Save file message to DB
+            TripsApi.postMessage(
+              tripId: widget.tripId,
+              role: 'user',
+              content: msg.content,
+              messageType: 'file',
+              metadata: {
+                'fileName': fileName,
+                'fileType': mimeType,
+                'fileSize': size,
+                if (linkedItem != null) 'linkedItem': linkedItem,
+              },
+            ).catchError((_) {});
 
             // Upload to storage in background
             TripsApi.uploadFile(
