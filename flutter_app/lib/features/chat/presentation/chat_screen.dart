@@ -260,19 +260,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
                 }
 
                 if (msg.role == 'user' && msg.messageType == MessageType.file) {
-                  // Find URL from DB attachments if no local bytes
-                  String? fileUrl;
-                  if (msg.fileBytes == null) {
-                    final dbAtts = ref.read(attachmentsProvider(widget.tripId));
-                    final match = dbAtts.where((a) => a['file_name'] == msg.fileName).toList();
-                    if (match.isNotEmpty) fileUrl = match.first['url'] as String?;
-                  }
                   return FileBubble(
                     fileName: msg.fileName ?? '',
                     fileType: msg.fileType ?? '',
                     fileSize: msg.fileSize ?? 0,
                     fileBytes: msg.fileBytes,
-                    fileUrl: fileUrl,
+                    fileUrl: msg.fileUrl,
                     time: msg.createdAt,
                     linkedItem: msg.metadata?['linkedItem'],
                   );

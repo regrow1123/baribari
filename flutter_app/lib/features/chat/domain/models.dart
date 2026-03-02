@@ -45,6 +45,7 @@ class Message {
   final String? fileType;
   final int? fileSize;
   final dynamic fileBytes; // Uint8List on web
+  final String? fileUrl;
 
   const Message({
     required this.id,
@@ -57,6 +58,7 @@ class Message {
     this.fileType,
     this.fileSize,
     this.fileBytes,
+    this.fileUrl,
     required this.createdAt,
   });
 }

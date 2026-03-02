@@ -135,18 +135,33 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
   Future<void> loadMessages() async {
     try {
       final data = await TripsApi.listMessages(tripId);
+      // Load attachments to get URLs for file messages
+      Map<String, String> fileUrlMap = {};
+      try {
+        final attachments = await TripsApi.listAttachments(tripId);
+        for (final att in attachments) {
+          final name = att['file_name'] as String?;
+          final url = att['url'] as String?;
+          if (name != null && url != null) {
+            fileUrlMap[name] = url;
+          }
+        }
+      } catch (_) {}
+
       state = data.map((d) {
         final msgType = _parseMessageType(d['message_type']);
         final meta = d['metadata'] != null ? Map<String, dynamic>.from(d['metadata']) : null;
+        final fileName = msgType == MessageType.file ? (meta?['fileName'] as String?) : null;
         return Message(
           id: d['id'],
           tripId: tripId,
           role: d['role'],
           content: d['content'] ?? '',
           messageType: msgType,
-          fileName: msgType == MessageType.file ? (meta?['fileName'] as String?) : null,
+          fileName: fileName,
           fileType: msgType == MessageType.file ? (meta?['fileType'] as String?) : null,
           fileSize: msgType == MessageType.file ? (meta?['fileSize'] as int?) : null,
+          fileUrl: fileName != null ? fileUrlMap[fileName] : null,
           metadata: meta,
           createdAt: DateTime.parse(d['created_at']),
         );
