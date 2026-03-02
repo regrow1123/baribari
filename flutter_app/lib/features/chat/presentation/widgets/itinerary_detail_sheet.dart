@@ -186,7 +186,12 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
               // Map section
               if (location.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                _MapPreview(location: location, title: title),
+                _MapPreview(
+                  location: location,
+                  title: title,
+                  lat: (item['lat'] as num?)?.toDouble(),
+                  lng: (item['lng'] as num?)?.toDouble(),
+                ),
               ],
               // Notes from LLM
               if (notes.isNotEmpty) ...[
@@ -277,14 +282,24 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
 class _MapPreview extends StatelessWidget {
   final String location;
   final String title;
+  final double? lat;
+  final double? lng;
 
-  const _MapPreview({required this.location, required this.title});
+  const _MapPreview({required this.location, required this.title, this.lat, this.lng});
 
   @override
   Widget build(BuildContext context) {
-    final query = Uri.encodeComponent('$title $location');
-    final mapsUrl = 'https://www.google.com/maps/search/?api=1&query=$query';
-    final embedUrl = 'https://maps.google.com/maps?q=$query&t=&z=15&ie=UTF8&iwloc=&output=embed';
+    // Use coordinates if available, otherwise fall back to text search
+    final String query;
+    final String mapsUrl;
+    if (lat != null && lng != null) {
+      query = '$lat,$lng';
+      mapsUrl = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    } else {
+      query = Uri.encodeComponent('$title $location');
+      mapsUrl = 'https://www.google.com/maps/search/?api=1&query=$query';
+    }
+    final embedUrl = 'https://maps.google.com/maps?q=$query&t=&z=16&ie=UTF8&iwloc=&output=embed';
     final viewType = 'map-$query';
 
     // Register iframe
