@@ -29,11 +29,11 @@ jobs:
         working-directory: flutter_app
         run: flutter build web --release
 
-      - name: Copy build to public/
+      - name: Copy build to web/
         run: |
-          rm -rf public
-          cp -r flutter_app/build/web public
-          rm -rf public/canvaskit
+          rm -rf web
+          cp -r flutter_app/build/web web
+          rm -rf web/canvaskit
 
       - name: Install Vercel CLI
         run: npm i -g vercel@latest

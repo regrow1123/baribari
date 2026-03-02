@@ -78,7 +78,7 @@ class TripsApi {
   }) async {
     debugPrint('[uploadFile] starting: $fileName ($mimeType, ${bytes.length} bytes) trip=$tripId linked=$linkedItem cat=$category');
     try {
-      final uri = Uri.parse('$_apiBase/api/upload-json');
+      final uri = Uri.parse('$_apiBase/api/upload');
       final res = await http.post(uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({

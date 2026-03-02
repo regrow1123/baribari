@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "web",
   "installCommand": "npm install",
   "functions": {
     "api/**/*.ts": {

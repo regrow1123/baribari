@@ -13,45 +13,75 @@ export default async function handler(req: Request) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
 
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const tripId = formData.get("tripId") as string | null;
-    const linkedItem = formData.get("linkedItem") as string | null;
-    const messageId = formData.get("messageId") as string | null;
-    const category = formData.get("category") as string | null;
+    const contentType = req.headers.get("content-type") || "";
+    
+    let tripId: string;
+    let fileName: string;
+    let mimeType: string;
+    let fileSize: number;
+    let fileBuffer: ArrayBuffer;
+    let linkedItem: string | null = null;
+    let category: string | null = null;
 
-    if (!file || !tripId) {
-      return new Response(JSON.stringify({ error: "file and tripId required" }), { status: 400, headers });
+    if (contentType.includes("application/json")) {
+      // JSON + base64 mode (from Flutter Web)
+      const body = await req.json();
+      tripId = body.tripId;
+      fileName = body.fileName;
+      mimeType = body.mimeType || "application/octet-stream";
+      linkedItem = body.linkedItem || null;
+      category = body.category || null;
+
+      const binaryStr = atob(body.data);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      fileBuffer = bytes.buffer;
+      fileSize = bytes.length;
+    } else {
+      // FormData mode (legacy)
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      tripId = formData.get("tripId") as string || "";
+      linkedItem = formData.get("linkedItem") as string | null;
+      category = formData.get("category") as string | null;
+
+      if (!file) {
+        return new Response(JSON.stringify({ error: "file required" }), { status: 400, headers });
+      }
+      fileName = file.name;
+      mimeType = file.type;
+      fileSize = file.size;
+      fileBuffer = await file.arrayBuffer();
+    }
+
+    if (!tripId || !fileName) {
+      return new Response(JSON.stringify({ error: "tripId and fileName required" }), { status: 400, headers });
     }
 
     // Upload to Supabase Storage
-    const ext = file.name.split(".").pop() || "bin";
-    const storagePath = `${tripId}/${Date.now()}_${file.name}`;
-
-    const arrayBuffer = await file.arrayBuffer();
+    const storagePath = `${tripId}/${Date.now()}_${fileName}`;
     const { error: uploadError } = await supabase.storage
       .from("attachments")
-      .upload(storagePath, arrayBuffer, {
-        contentType: file.type,
+      .upload(storagePath, fileBuffer, {
+        contentType: mimeType,
         upsert: false,
       });
 
     if (uploadError) throw uploadError;
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from("attachments")
       .getPublicUrl(storagePath);
 
-    // Save to attachments table
     const { data, error } = await supabase
       .from("attachments")
       .insert({
         trip_id: tripId,
-        ...(messageId ? { message_id: messageId } : {}),
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
+        file_name: fileName,
+        file_type: mimeType,
+        file_size: fileSize,
         storage_path: storagePath,
         ...(linkedItem ? { linked_item: linkedItem } : {}),
         ...(category ? { category } : {}),
@@ -62,14 +92,11 @@ export default async function handler(req: Request) {
     if (error) throw error;
 
     return new Response(
-      JSON.stringify({
-        ...data,
-        url: urlData.publicUrl,
-        linkedItem,
-      }),
+      JSON.stringify({ ...data, url: urlData.publicUrl }),
       { status: 201, headers }
     );
   } catch (err: any) {
+    console.error("upload error:", err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
   }
 }
