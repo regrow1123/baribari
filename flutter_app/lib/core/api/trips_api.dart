@@ -35,6 +35,33 @@ class TripsApi {
     return Map<String, dynamic>.from(jsonDecode(res.body));
   }
 
+  static Future<Map<String, dynamic>> updateTrip(String id, {String? title, String? destination}) async {
+    final res = await http.put(
+      Uri.parse('$_apiBase/api/trips?id=$id'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        if (title != null) 'title': title,
+        if (destination != null) 'destination': destination,
+      }),
+    );
+    if (res.statusCode != 200) throw Exception('Failed to update trip');
+    return Map<String, dynamic>.from(jsonDecode(res.body));
+  }
+
+  static Future<String> autoTitle(String tripId, String userMessage, String? assistantMessage) async {
+    final res = await http.post(
+      Uri.parse('$_apiBase/api/auto-title'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'tripId': tripId,
+        'userMessage': userMessage,
+        'assistantMessage': assistantMessage,
+      }),
+    );
+    if (res.statusCode != 200) throw Exception('Failed to generate title');
+    return (jsonDecode(res.body) as Map)['title'] as String;
+  }
+
   static Future<void> deleteTrip(String id) async {
     await http.delete(Uri.parse('$_apiBase/api/trips?id=$id'));
   }

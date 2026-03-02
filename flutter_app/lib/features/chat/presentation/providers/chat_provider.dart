@@ -69,6 +69,23 @@ class TripListNotifier extends StateNotifier<List<Trip>> {
     state = state.where((t) => t.id != tripId).toList();
   }
 
+  Future<void> updateTitle(String tripId, String title) async {
+    try {
+      await TripsApi.updateTrip(tripId, title: title);
+    } catch (_) {}
+    state = state.map((t) {
+      if (t.id == tripId) {
+        return Trip(
+          id: t.id, userId: t.userId, title: title,
+          destination: t.destination, startDate: t.startDate, endDate: t.endDate,
+          travelStyle: t.travelStyle, budgetKrw: t.budgetKrw, status: t.status,
+          createdAt: t.createdAt, updatedAt: DateTime.now(), lastMessage: t.lastMessage,
+        );
+      }
+      return t;
+    }).toList();
+  }
+
   void updateLastMessage(String tripId, String message) {
     state = state.map((t) {
       if (t.id == tripId) {
@@ -158,6 +175,9 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
     );
     addMessage(userMsg);
 
+    // Check if this is the first user message (for auto-title)
+    final isFirstMessage = state.where((m) => m.role == 'user').length <= 1;
+
     ref.read(isTypingProvider(tripId).notifier).state = true;
 
     try {
@@ -241,6 +261,11 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
         tripId,
         responseText.length > 30 ? '${responseText.substring(0, 30)}...' : responseText,
       );
+
+      // Auto-generate title after first message
+      if (isFirstMessage) {
+        _autoGenerateTitle(content, responseText);
+      }
     } catch (e) {
       ref.read(isTypingProvider(tripId).notifier).state = false;
       addMessage(Message(
@@ -251,6 +276,13 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
         createdAt: DateTime.now(),
       ));
     }
+  }
+
+  Future<void> _autoGenerateTitle(String userMessage, String assistantMessage) async {
+    try {
+      final title = await TripsApi.autoTitle(tripId, userMessage, assistantMessage);
+      ref.read(tripListProvider.notifier).updateTitle(tripId, title);
+    } catch (_) {}
   }
 }
 

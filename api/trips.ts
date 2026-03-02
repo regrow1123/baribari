@@ -9,7 +9,7 @@ export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
@@ -53,6 +53,23 @@ export default async function handler(req: Request) {
         .single();
       if (error) throw error;
       return new Response(JSON.stringify(data), { status: 201, headers });
+    }
+
+    // PUT - update trip
+    if (req.method === 'PUT' && tripId) {
+      const body = await req.json();
+      const updates: any = {};
+      if (body.title !== undefined) updates.title = body.title;
+      if (body.destination !== undefined) updates.destination = body.destination;
+      updates.updated_at = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('trips')
+        .update(updates)
+        .eq('id', tripId)
+        .select()
+        .single();
+      if (error) throw error;
+      return new Response(JSON.stringify(data), { headers });
     }
 
     // DELETE

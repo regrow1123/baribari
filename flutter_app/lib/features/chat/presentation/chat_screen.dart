@@ -71,13 +71,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
               )
             : null,
         automaticallyImplyLeading: false,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(trip.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            if (trip.destination != null)
-              Text(trip.destination!, style: const TextStyle(fontSize: 12, color: Colors.white70)),
-          ],
+        title: GestureDetector(
+          onTap: () => _showEditTitleDialog(context, ref, trip),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(trip.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.edit, size: 14, color: Colors.white54),
+                ],
+              ),
+              if (trip.destination != null)
+                Text(trip.destination!, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+            ],
+          ),
         ),
         bottom: TabBar(
           controller: _tabController,
@@ -102,6 +114,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
           ItineraryTab(tripId: widget.tripId),
           // Tab 3: Packing
           PackingTab(tripId: widget.tripId),
+        ],
+      ),
+    );
+  }
+
+  void _showEditTitleDialog(BuildContext context, WidgetRef ref, Trip trip) {
+    final controller = TextEditingController(text: trip.title);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('여행 제목 수정'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '여행 제목을 입력하세요'),
+          onSubmitted: (_) {
+            final newTitle = controller.text.trim();
+            if (newTitle.isNotEmpty) {
+              ref.read(tripListProvider.notifier).updateTitle(trip.id, newTitle);
+            }
+            Navigator.pop(ctx);
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+          TextButton(
+            onPressed: () {
+              final newTitle = controller.text.trim();
+              if (newTitle.isNotEmpty) {
+                ref.read(tripListProvider.notifier).updateTitle(trip.id, newTitle);
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('저장'),
+          ),
         ],
       ),
     );
