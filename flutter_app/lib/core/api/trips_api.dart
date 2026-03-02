@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class TripsApi {
   static const _baseUrl = String.fromEnvironment(
@@ -75,17 +76,27 @@ class TripsApi {
     String? linkedItem,
     String? category,
   }) async {
-    final uri = Uri.parse('$_apiBase/api/upload');
-    final request = http.MultipartRequest('POST', uri)
-      ..fields['tripId'] = tripId
-      ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
-    if (linkedItem != null) request.fields['linkedItem'] = linkedItem;
-    if (category != null) request.fields['category'] = category;
-
-    final streamed = await request.send();
-    final body = await streamed.stream.bytesToString();
-    if (streamed.statusCode != 201) throw Exception('Upload failed: $body');
-    return Map<String, dynamic>.from(jsonDecode(body));
+    debugPrint('[uploadFile] starting: $fileName ($mimeType, ${bytes.length} bytes) trip=$tripId linked=$linkedItem cat=$category');
+    try {
+      final uri = Uri.parse('$_apiBase/api/upload-json');
+      final res = await http.post(uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'tripId': tripId,
+          'fileName': fileName,
+          'mimeType': mimeType,
+          'data': base64Encode(bytes),
+          if (linkedItem != null) 'linkedItem': linkedItem,
+          if (category != null) 'category': category,
+        }),
+      );
+      debugPrint('[uploadFile] response: ${res.statusCode}');
+      if (res.statusCode != 201) throw Exception('Upload failed: ${res.body}');
+      return Map<String, dynamic>.from(jsonDecode(res.body));
+    } catch (e) {
+      debugPrint('[uploadFile] ERROR: $e');
+      rethrow;
+    }
   }
 
   static Future<List<Map<String, dynamic>>> listAttachments(String tripId) async {
