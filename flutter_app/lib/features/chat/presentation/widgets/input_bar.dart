@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/kakao_theme.dart';
 
 class InputBar extends StatefulWidget {
@@ -90,19 +91,29 @@ class _InputBarState extends State<InputBar> {
                   color: const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: TextField(
-                  controller: _controller,
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _send(),
-                  onChanged: (v) => setState(() => _hasText = v.trim().isNotEmpty),
-                  decoration: const InputDecoration(
-                    hintText: '메시지를 입력하세요',
-                    hintStyle: TextStyle(color: KakaoTheme.secondary, fontSize: 14),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Focus(
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.enter &&
+                        !HardwareKeyboard.instance.isShiftPressed) {
+                      _send();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: TextField(
+                    controller: _controller,
+                    maxLines: null,
+                    textInputAction: TextInputAction.newline,
+                    onChanged: (v) => setState(() => _hasText = v.trim().isNotEmpty),
+                    decoration: const InputDecoration(
+                      hintText: '메시지를 입력하세요 (Shift+Enter 줄바꿈)',
+                      hintStyle: TextStyle(color: KakaoTheme.secondary, fontSize: 14),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
+                    style: const TextStyle(fontSize: 14),
                   ),
-                  style: const TextStyle(fontSize: 14),
                 ),
               ),
             ),
