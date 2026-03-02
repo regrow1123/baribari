@@ -41,6 +41,8 @@ export default async function handler(req: Request) {
           currency: body.currency || "KRW",
           category: body.category,
           memo: body.memo,
+          day_number: body.dayNumber || null,
+          linked_item: body.linkedItem || null,
           spent_at: body.spentAt || new Date().toISOString(),
         })
         .select()

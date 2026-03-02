@@ -25,6 +25,9 @@ class ItineraryTab extends ConsumerWidget {
     // Also load persisted attachments from DB
     final dbAttachments = ref.watch(attachmentsProvider(tripId));
 
+    // Expenses for day-level totals
+    final expenses = ref.watch(expensesProvider(tripId));
+
     // Find the latest itinerary card message
     final itineraryMsg = messages.lastWhere(
       (m) => m.messageType == MessageType.itineraryCard && m.metadata != null,
@@ -91,11 +94,15 @@ class ItineraryTab extends ConsumerWidget {
           // Day cards
           ...List.generate(days.length, (index) {
             final day = days[index] as Map<String, dynamic>;
+            final dayNum = (day['day'] ?? index + 1) as int;
+            final dayExpenses = expenses.where((e) => e['day_number'] == dayNum).toList();
+            final dayExpenseTotal = dayExpenses.fold<int>(0, (s, e) => s + ((e['amount'] as num?)?.toInt() ?? 0));
             return _DayCard(
               day: day,
               dayIndex: index,
               packingMetadata: packingMsg.metadata,
               fileMessages: fileMessages,
+              expenseTotal: dayExpenseTotal,
             );
           }),
         ],
@@ -109,12 +116,14 @@ class _DayCard extends StatelessWidget {
   final int dayIndex;
   final Map<String, dynamic>? packingMetadata;
   final List<Message> fileMessages;
+  final int expenseTotal;
 
   const _DayCard({
     required this.day,
     required this.dayIndex,
     this.packingMetadata,
     this.fileMessages = const [],
+    this.expenseTotal = 0,
   });
 
   @override
@@ -158,6 +167,19 @@ class _DayCard extends StatelessWidget {
                 ),
               ],
               const Spacer(),
+              if (expenseTotal > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF48BB78).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '💰 ${NumberFormat.currency(locale: "ko_KR", symbol: "₩", decimalDigits: 0).format(expenseTotal)}',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF48BB78), fontWeight: FontWeight.w600),
+                  ),
+                ),
               _totalCost(items),
             ],
           ),

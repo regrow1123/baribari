@@ -323,9 +323,9 @@ class ExpensesNotifier extends StateNotifier<List<Map<String, dynamic>>> {
     } catch (_) {}
   }
 
-  Future<void> add({required int amount, required String category, String? memo}) async {
+  Future<void> add({required int amount, required String category, String? memo, int? dayNumber, String? linkedItem}) async {
     try {
-      final data = await TripsApi.addExpense(tripId: tripId, amount: amount, category: category, memo: memo);
+      final data = await TripsApi.addExpense(tripId: tripId, amount: amount, category: category, memo: memo, dayNumber: dayNumber, linkedItem: linkedItem);
       state = [data, ...state];
     } catch (_) {}
   }

@@ -104,6 +104,8 @@ class TripsApi {
     required String category,
     String? memo,
     String currency = 'KRW',
+    int? dayNumber,
+    String? linkedItem,
   }) async {
     final res = await http.post(
       Uri.parse('$_apiBase/api/expenses?tripId=$tripId'),
@@ -113,6 +115,8 @@ class TripsApi {
         'category': category,
         'memo': memo,
         'currency': currency,
+        if (dayNumber != null) 'dayNumber': dayNumber,
+        if (linkedItem != null) 'linkedItem': linkedItem,
       }),
     );
     if (res.statusCode != 201) throw Exception('Failed to add expense');
