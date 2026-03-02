@@ -372,16 +372,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
                 'fileSize': size,
                 if (linkedItem != null) 'linkedItem': linkedItem,
               },
-            ).catchError((_) {});
+            ).catchError((e) => debugPrint('postMessage error: $e'));
 
             // Upload to storage in background
+            final isImage = mimeType.startsWith('image/');
             TripsApi.uploadFile(
               tripId: widget.tripId,
               fileName: fileName,
               mimeType: mimeType,
               bytes: bytes,
               linkedItem: linkedItem,
-            ).catchError((_) {});
+              category: isImage ? 'photo' : 'document',
+            ).then((_) {
+              ref.read(attachmentsProvider(widget.tripId).notifier).load();
+            }).catchError((e) => debugPrint('upload error: $e'));
           },
         ),
       ],
