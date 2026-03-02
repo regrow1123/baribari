@@ -104,7 +104,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
             Tab(text: '💬 대화'),
             Tab(text: '🗓️ 일정'),
             Tab(text: '🎒 준비물'),
-            Tab(text: '💰 가계부'),
+            Tab(text: '💰 경비'),
           ],
         ),
       ),
