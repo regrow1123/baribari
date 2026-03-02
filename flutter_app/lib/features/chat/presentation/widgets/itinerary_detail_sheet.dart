@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/api/trips_api.dart';
 import '../../../../core/theme/kakao_theme.dart';
@@ -179,6 +180,11 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
                     _InfoChip(icon: Icons.payments, label: NumberFormat.currency(locale: 'ko_KR', symbol: '₩', decimalDigits: 0).format(costKrw)),
                 ],
               ),
+              // Map section
+              if (location.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _MapPreview(location: location, title: title),
+              ],
               // Notes from LLM
               if (notes.isNotEmpty) ...[
                 const SizedBox(height: 16),
@@ -261,6 +267,85 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
           ),
         );
       },
+    );
+  }
+}
+
+class _MapPreview extends StatelessWidget {
+  final String location;
+  final String title;
+
+  const _MapPreview({required this.location, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final query = Uri.encodeComponent('$title $location');
+    final mapsUrl = 'https://www.google.com/maps/search/?api=1&query=$query';
+    // Use OpenStreetMap static tile (free, no API key)
+    final staticMapUrl = 'https://staticmap.openstreetmap.de/staticmap.php?center=$query&zoom=15&size=600x200&maptype=mapnik';
+
+    return GestureDetector(
+      onTap: () => launchUrl(Uri.parse(mapsUrl), mode: LaunchMode.externalApplication),
+      child: Container(
+        height: 160,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFFE8F4FD),
+          border: Border.all(color: const Color(0xFF4A90D9).withValues(alpha: 0.3)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            // Map background
+            Positioned.fill(
+              child: Image.network(
+                staticMapUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: const Color(0xFFE8F4FD),
+                  child: const Center(child: Icon(Icons.map, size: 48, color: Color(0xFF4A90D9))),
+                ),
+              ),
+            ),
+            // Overlay with location info
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.white, size: 16),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        location,
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const Icon(Icons.open_in_new, color: Colors.white, size: 14),
+                  ],
+                ),
+              ),
+            ),
+            // Pin
+            const Positioned(
+              top: 50, left: 0, right: 0,
+              child: Center(
+                child: Text('📍', style: TextStyle(fontSize: 32)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
