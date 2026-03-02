@@ -24,21 +24,21 @@ class ChatApi {
     final body = utf8.decode(response.bodyBytes);
 
     // Parse SSE response
-    final lines = body.split('\n');
+    // Split by 'data: ' prefix to handle each SSE event
     final buffer = StringBuffer();
-    for (final line in lines) {
-      final trimmed = line.trim();
-      if (trimmed.startsWith('data: ')) {
-        try {
-          final data = jsonDecode(trimmed.substring(6)) as Map<String, dynamic>;
-          if (data['type'] == 'text') {
-            buffer.write(data['content']);
-          } else if (data['type'] == 'error') {
-            throw Exception(data['content']);
-          }
-        } catch (e) {
-          if (e is Exception && e.toString().contains('content')) rethrow;
+    final parts = body.split('data: ');
+    for (final part in parts) {
+      final trimmed = part.trim();
+      if (trimmed.isEmpty) continue;
+      try {
+        final data = jsonDecode(trimmed) as Map<String, dynamic>;
+        if (data['type'] == 'text') {
+          buffer.write(data['content']);
+        } else if (data['type'] == 'error') {
+          throw Exception(data['content']);
         }
+      } catch (e) {
+        if (e is Exception && e.toString().contains('content')) rethrow;
       }
     }
 
