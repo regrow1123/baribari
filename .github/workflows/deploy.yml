@@ -43,12 +43,17 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Deploy to Vercel
+      - name: Set Vercel Env Vars
         run: |
-          vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} \
-            -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-            -e SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            -e SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          echo "${{ secrets.GEMINI_API_KEY }}" | vercel env add GEMINI_API_KEY production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+          echo "${{ secrets.SUPABASE_URL }}" | vercel env add SUPABASE_URL production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+          echo "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" | vercel env add SUPABASE_SERVICE_ROLE_KEY production --token=${{ secrets.VERCEL_TOKEN }} --force 2>/dev/null || true
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
