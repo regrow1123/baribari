@@ -372,7 +372,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
                 'fileSize': size,
                 if (linkedItem != null) 'linkedItem': linkedItem,
               },
-            ).catchError((e) => debugPrint('postMessage error: $e'));
+            ).catchError((e) {
+              debugPrint('postMessage error: $e');
+            });
 
             // Upload to storage in background
             final isImage = mimeType.startsWith('image/');
@@ -384,8 +386,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
               linkedItem: linkedItem,
               category: isImage ? 'photo' : 'document',
             ).then((_) {
+              debugPrint('upload SUCCESS: $fileName');
               ref.read(attachmentsProvider(widget.tripId).notifier).load();
-            }).catchError((e) => debugPrint('upload error: $e'));
+            }).catchError((e) {
+              debugPrint('upload error: $e');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('업로드 실패: $e'), backgroundColor: Colors.red),
+                );
+              }
+            });
           },
         ),
       ],
