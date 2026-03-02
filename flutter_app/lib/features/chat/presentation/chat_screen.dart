@@ -7,6 +7,7 @@ import 'providers/chat_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/api/trips_api.dart';
 import 'widgets/assistant_bubble.dart';
+import 'widgets/expense_tab.dart';
 import 'widgets/file_bubble.dart';
 import 'widgets/input_bar.dart';
 import 'widgets/itinerary_card.dart';
@@ -32,7 +33,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (_tabController.index == 0) _scrollToBottom();
     });
@@ -103,6 +104,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
             Tab(text: '💬 대화'),
             Tab(text: '🗓️ 일정'),
             Tab(text: '🎒 준비물'),
+            Tab(text: '💰 가계부'),
           ],
         ),
       ),
@@ -115,6 +117,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
           ItineraryTab(tripId: widget.tripId),
           // Tab 3: Packing
           PackingTab(tripId: widget.tripId),
+          // Tab 4: Expenses
+          ExpenseTab(tripId: widget.tripId),
         ],
       ),
     );

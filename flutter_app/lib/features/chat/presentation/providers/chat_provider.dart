@@ -307,4 +307,35 @@ class AttachmentsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
   }
 }
 
+// ── Expenses ──
+final expensesProvider =
+    StateNotifierProvider.family<ExpensesNotifier, List<Map<String, dynamic>>, String>(
+  (ref, tripId) => ExpensesNotifier(tripId)..load(),
+);
+
+class ExpensesNotifier extends StateNotifier<List<Map<String, dynamic>>> {
+  final String tripId;
+  ExpensesNotifier(this.tripId) : super([]);
+
+  Future<void> load() async {
+    try {
+      state = await TripsApi.listExpenses(tripId);
+    } catch (_) {}
+  }
+
+  Future<void> add({required int amount, required String category, String? memo}) async {
+    try {
+      final data = await TripsApi.addExpense(tripId: tripId, amount: amount, category: category, memo: memo);
+      state = [data, ...state];
+    } catch (_) {}
+  }
+
+  Future<void> remove(String expenseId) async {
+    try {
+      await TripsApi.deleteExpense(tripId, expenseId);
+      state = state.where((e) => e['id'] != expenseId).toList();
+    } catch (_) {}
+  }
+}
+
 final isTypingProvider = StateProvider.family<bool, String>((ref, tripId) => false);

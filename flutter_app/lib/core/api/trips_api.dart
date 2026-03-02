@@ -92,6 +92,37 @@ class TripsApi {
     return List<Map<String, dynamic>>.from(jsonDecode(res.body));
   }
 
+  static Future<List<Map<String, dynamic>>> listExpenses(String tripId) async {
+    final res = await http.get(Uri.parse('$_apiBase/api/expenses?tripId=$tripId'));
+    if (res.statusCode != 200) throw Exception('Failed to load expenses');
+    return List<Map<String, dynamic>>.from(jsonDecode(res.body));
+  }
+
+  static Future<Map<String, dynamic>> addExpense({
+    required String tripId,
+    required int amount,
+    required String category,
+    String? memo,
+    String currency = 'KRW',
+  }) async {
+    final res = await http.post(
+      Uri.parse('$_apiBase/api/expenses?tripId=$tripId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'amount': amount,
+        'category': category,
+        'memo': memo,
+        'currency': currency,
+      }),
+    );
+    if (res.statusCode != 201) throw Exception('Failed to add expense');
+    return Map<String, dynamic>.from(jsonDecode(res.body));
+  }
+
+  static Future<void> deleteExpense(String tripId, String expenseId) async {
+    await http.delete(Uri.parse('$_apiBase/api/expenses?tripId=$tripId&id=$expenseId'));
+  }
+
   static Future<List<Map<String, dynamic>>> listMessages(String tripId) async {
     final res = await http.get(Uri.parse('$_apiBase/api/messages?tripId=$tripId'));
     if (res.statusCode != 200) throw Exception('Failed to load messages');
