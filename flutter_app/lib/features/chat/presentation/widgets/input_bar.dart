@@ -95,7 +95,7 @@ class _InputBarState extends State<InputBar> {
                   onKeyEvent: (node, event) {
                     if (event is KeyDownEvent &&
                         event.logicalKey == LogicalKeyboardKey.enter &&
-                        !HardwareKeyboard.instance.isShiftPressed) {
+                        HardwareKeyboard.instance.isShiftPressed) {
                       _send();
                       return KeyEventResult.handled;
                     }
@@ -107,7 +107,7 @@ class _InputBarState extends State<InputBar> {
                     textInputAction: TextInputAction.newline,
                     onChanged: (v) => setState(() => _hasText = v.trim().isNotEmpty),
                     decoration: const InputDecoration(
-                      hintText: '메시지를 입력하세요 (Shift+Enter 줄바꿈)',
+                      hintText: '메시지를 입력하세요 (Shift+Enter 전송)',
                       hintStyle: TextStyle(color: KakaoTheme.secondary, fontSize: 14),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
