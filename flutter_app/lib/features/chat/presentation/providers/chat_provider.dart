@@ -286,4 +286,25 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
   }
 }
 
+// ── Attachments from DB ──
+final attachmentsProvider =
+    StateNotifierProvider.family<AttachmentsNotifier, List<Map<String, dynamic>>, String>(
+  (ref, tripId) => AttachmentsNotifier(tripId)..load(),
+);
+
+class AttachmentsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
+  final String tripId;
+  AttachmentsNotifier(this.tripId) : super([]);
+
+  Future<void> load() async {
+    try {
+      state = await TripsApi.listAttachments(tripId);
+    } catch (_) {}
+  }
+
+  void addLocal(Map<String, dynamic> att) {
+    state = [...state, att];
+  }
+}
+
 final isTypingProvider = StateProvider.family<bool, String>((ref, tripId) => false);

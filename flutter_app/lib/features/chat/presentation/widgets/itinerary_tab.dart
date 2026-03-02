@@ -17,10 +17,13 @@ class ItineraryTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final messages = ref.watch(messagesProvider(tripId));
 
-    // Collect all file messages for this trip
+    // Collect all file messages for this trip (in-memory)
     final fileMessages = messages.where(
       (m) => m.messageType == MessageType.file && m.fileBytes != null,
     ).toList();
+
+    // Also load persisted attachments from DB
+    final dbAttachments = ref.watch(attachmentsProvider(tripId));
 
     // Find the latest itinerary card message
     final itineraryMsg = messages.lastWhere(
@@ -61,9 +64,9 @@ class ItineraryTab extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Attachments section
-          if (fileMessages.isNotEmpty) ...[
-            _AttachmentsSection(files: fileMessages),
+          // Attachments section (in-memory + DB)
+          if (fileMessages.isNotEmpty || dbAttachments.isNotEmpty) ...[
+            _AttachmentsSection(files: fileMessages, dbAttachments: dbAttachments),
             const SizedBox(height: 16),
           ],
           // Add attachment button
@@ -505,8 +508,17 @@ class _ItineraryItemTile extends StatelessWidget {
 
 class _AttachmentsSection extends StatelessWidget {
   final List<Message> files;
+  final List<Map<String, dynamic>> dbAttachments;
 
-  const _AttachmentsSection({required this.files});
+  const _AttachmentsSection({required this.files, this.dbAttachments = const []});
+
+  // DB attachments whose file_name is NOT already in memory files
+  List<Map<String, dynamic>> get _uniqueDbAttachments {
+    final memNames = files.map((f) => f.fileName).toSet();
+    return dbAttachments.where((a) => !memNames.contains(a['file_name'])).toList();
+  }
+
+  int get _uniqueDbCount => _uniqueDbAttachments.length;
 
   @override
   Widget build(BuildContext context) {
@@ -541,7 +553,7 @@ class _AttachmentsSection extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${files.length}개',
+                  '${files.length + _uniqueDbCount}개',
                   style: const TextStyle(fontSize: 13, color: Color(0xFF4A90D9)),
                 ),
               ],
@@ -553,7 +565,11 @@ class _AttachmentsSection extends StatelessWidget {
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: files.map((f) => _FileChip(file: f)).toList(),
+              children: [
+                ...files.map((f) => _FileChip(file: f)),
+                // DB attachments not in memory
+                ..._uniqueDbAttachments.map((att) => _DbFileChip(attachment: att)),
+              ],
             ),
           ),
         ],
@@ -647,6 +663,84 @@ class _FileChip extends StatelessWidget {
     if (type.startsWith('image/')) return const Color(0xFF9F7AEA);
     if (type == 'application/pdf') return const Color(0xFFE53E3E);
     return const Color(0xFF4A90D9);
+  }
+}
+
+class _DbFileChip extends StatelessWidget {
+  final Map<String, dynamic> attachment;
+
+  const _DbFileChip({required this.attachment});
+
+  @override
+  Widget build(BuildContext context) {
+    final fileName = attachment['file_name'] as String? ?? '';
+    final fileType = attachment['file_type'] as String? ?? '';
+    final url = attachment['url'] as String?;
+    final isImage = fileType.startsWith('image/');
+
+    return GestureDetector(
+      onTap: () {
+        if (url != null) {
+          showDialog(
+            context: context,
+            builder: (_) => Dialog(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppBar(
+                    title: Text(fileName, style: const TextStyle(fontSize: 14)),
+                    automaticallyImplyLeading: false,
+                    actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))],
+                  ),
+                  if (isImage) Image.network(url, fit: BoxFit.contain)
+                  else Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      children: [
+                        const Text('📄', style: TextStyle(fontSize: 48)),
+                        const SizedBox(height: 8),
+                        Text(fileName),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      },
+      child: Container(
+        width: 100,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F7FA),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE8E8E8)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            if (isImage && url != null)
+              SizedBox(
+                height: 70,
+                width: 100,
+                child: Image.network(url, fit: BoxFit.cover, errorBuilder: (_, __, ___) =>
+                  Container(height: 70, color: Colors.grey[200], child: const Center(child: Icon(Icons.broken_image)))),
+              )
+            else
+              Container(
+                height: 70,
+                width: 100,
+                color: (fileType == 'application/pdf' ? const Color(0xFFE53E3E) : const Color(0xFF4A90D9)).withValues(alpha: 0.1),
+                child: Center(child: Text(fileType == 'application/pdf' ? '📄' : '📎', style: const TextStyle(fontSize: 28))),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(6),
+              child: Text(fileName, style: const TextStyle(fontSize: 10, color: KakaoTheme.primary), maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
