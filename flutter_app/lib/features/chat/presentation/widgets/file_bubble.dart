@@ -57,6 +57,7 @@ class FileBubble extends StatelessWidget {
                         fileBytes!,
                         fit: BoxFit.cover,
                         width: double.infinity,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     )
                   else if (isImage && fileUrl != null)
@@ -66,6 +67,13 @@ class FileBubble extends StatelessWidget {
                         fileUrl!,
                         fit: BoxFit.cover,
                         width: double.infinity,
+                        loadingBuilder: (_, child, progress) {
+                          if (progress == null) return child;
+                          return const SizedBox(
+                            height: 100,
+                            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          );
+                        },
                         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),
