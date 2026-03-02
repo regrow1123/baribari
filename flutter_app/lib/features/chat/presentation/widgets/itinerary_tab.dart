@@ -16,9 +16,9 @@ class ItineraryTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final messages = ref.watch(messagesProvider(tripId));
 
-    // Collect all file messages for this trip (in-memory)
+    // Collect all file messages for this trip
     final fileMessages = messages.where(
-      (m) => m.messageType == MessageType.file && m.fileBytes != null,
+      (m) => m.messageType == MessageType.file,
     ).toList();
 
     // Also load persisted attachments from DB
@@ -395,7 +395,7 @@ class _ItineraryItemTile extends StatelessWidget {
                         final isImage = (f.fileType ?? '').startsWith('image/');
                         return GestureDetector(
                           onTap: () {
-                            if (isImage && f.fileBytes != null) {
+                            if (isImage && (f.fileBytes != null || f.fileUrl != null)) {
                               showDialog(useRootNavigator: false, 
                                 context: context,
                                 builder: (dialogCtx) => Dialog(
@@ -407,7 +407,10 @@ class _ItineraryItemTile extends StatelessWidget {
                                         automaticallyImplyLeading: false,
                                         actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(dialogCtx))],
                                       ),
-                                      Image.memory(f.fileBytes as Uint8List, fit: BoxFit.contain),
+                                      if (f.fileBytes != null)
+                                        Image.memory(f.fileBytes as Uint8List, fit: BoxFit.contain)
+                                      else if (f.fileUrl != null)
+                                        Image.network(f.fileUrl!, fit: BoxFit.contain),
                                     ],
                                   ),
                                 ),
