@@ -118,12 +118,7 @@ class ExpenseTab extends ConsumerWidget {
                   )
                 : ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    children: [
-                      // Day groups
-                      ...byDay.entries.toList()
-                        ..sort((a, b) => a.key.compareTo(b.key)),
-                      // We need to build widgets from sorted entries
-                    ].isEmpty ? [] : _buildDayGroups(byDay, days, ref),
+                    children: _buildDayGroups(byDay, days, ref),
                   ),
           ),
         ],
@@ -179,7 +174,8 @@ class ExpenseTab extends ConsumerWidget {
     }
 
     // Unlinked expenses
-    final unlinked = ref.read(expensesProvider(tripId)).where((e) => e['day_number'] == null).toList();
+    final allExpenses = ref.read(expensesProvider(tripId));
+    final unlinked = allExpenses.where((e) => e['day_number'] == null).toList();
     if (unlinked.isNotEmpty) {
       widgets.add(
         const Padding(
