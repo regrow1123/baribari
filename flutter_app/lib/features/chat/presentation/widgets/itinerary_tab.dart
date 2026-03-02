@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/theme/kakao_theme.dart';
 import '../../domain/models.dart';
 import '../providers/chat_provider.dart';
+import 'itinerary_detail_sheet.dart';
 
 class ItineraryTab extends ConsumerWidget {
   final String tripId;
@@ -103,6 +104,8 @@ class ItineraryTab extends ConsumerWidget {
               packingMetadata: packingMsg.metadata,
               fileMessages: fileMessages,
               expenseTotal: dayExpenseTotal,
+              tripId: tripId,
+              dbAttachments: dbAttachments,
             );
           }),
         ],
@@ -117,6 +120,8 @@ class _DayCard extends StatelessWidget {
   final Map<String, dynamic>? packingMetadata;
   final List<Message> fileMessages;
   final int expenseTotal;
+  final String tripId;
+  final List<Map<String, dynamic>> dbAttachments;
 
   const _DayCard({
     required this.day,
@@ -124,6 +129,8 @@ class _DayCard extends StatelessWidget {
     this.packingMetadata,
     this.fileMessages = const [],
     this.expenseTotal = 0,
+    required this.tripId,
+    this.dbAttachments = const [],
   });
 
   @override
@@ -194,6 +201,8 @@ class _DayCard extends StatelessWidget {
             packingMetadata: packingMetadata,
             dayLabel: 'Day $dayNum',
             fileMessages: fileMessages,
+            tripId: tripId,
+            dbAttachments: dbAttachments,
           );
         }),
       ],
@@ -224,6 +233,8 @@ class _ItineraryItemTile extends StatelessWidget {
   final Map<String, dynamic>? packingMetadata;
   final String dayLabel;
   final List<Message> fileMessages;
+  final String tripId;
+  final List<Map<String, dynamic>> dbAttachments;
 
   const _ItineraryItemTile({
     required this.item,
@@ -231,6 +242,8 @@ class _ItineraryItemTile extends StatelessWidget {
     this.packingMetadata,
     required this.dayLabel,
     this.fileMessages = const [],
+    required this.tripId,
+    this.dbAttachments = const [],
   });
 
   List<Message> get _linkedFiles {
@@ -286,7 +299,9 @@ class _ItineraryItemTile extends StatelessWidget {
           ),
           // Content card
           Expanded(
-            child: Container(
+            child: GestureDetector(
+              onTap: () => _openDetail(context),
+              child: Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -482,8 +497,26 @@ class _ItineraryItemTile extends StatelessWidget {
                 ],
               ),
             ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openDetail(BuildContext context) {
+    final itemLabel = '$dayLabel - ${item['title']}';
+    final linkedFiles = fileMessages.where((f) => f.metadata?['linkedItem'] == itemLabel).toList();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ItineraryDetailSheet(
+        tripId: tripId,
+        item: item,
+        dayLabel: dayLabel,
+        linkedFiles: linkedFiles,
+        dbLinkedFiles: dbAttachments,
       ),
     );
   }
