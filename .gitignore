@@ -1,4 +1,4 @@
 # Node
 node_modules/
 # Keep package-lock.json for Vercel
-web/canvaskit/
+public/canvaskit/
