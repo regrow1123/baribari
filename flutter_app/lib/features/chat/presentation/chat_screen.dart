@@ -5,6 +5,7 @@ import '../../../core/theme/kakao_theme.dart';
 import '../domain/models.dart';
 import 'providers/chat_provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/api/trips_api.dart';
 import 'widgets/assistant_bubble.dart';
 import 'widgets/file_bubble.dart';
 import 'widgets/input_bar.dart';
@@ -346,6 +347,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
               createdAt: DateTime.now(),
             );
             ref.read(messagesProvider(widget.tripId).notifier).addMessage(msg);
+
+            // Upload to storage in background
+            TripsApi.uploadFile(
+              tripId: widget.tripId,
+              fileName: fileName,
+              mimeType: mimeType,
+              bytes: bytes,
+              linkedItem: linkedItem,
+            ).catchError((_) {});
           },
         ),
       ],
