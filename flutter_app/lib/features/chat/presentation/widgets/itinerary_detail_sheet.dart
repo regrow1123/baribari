@@ -59,7 +59,7 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
     for (final file in result.files) {
       if (file.bytes != null) {
         setState(() => _localPhotos.add(_LocalFile(name: file.name, bytes: file.bytes!, isImage: true)));
-        _uploadFile(file.name, file.extension == 'png' ? 'image/png' : 'image/jpeg', file.bytes!, file.size);
+        _uploadFile(file.name, file.extension == 'png' ? 'image/png' : 'image/jpeg', file.bytes!, file.size, category: 'photo');
       }
     }
   }
@@ -77,7 +77,7 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
         final mime = _mimeFromExt(file.extension ?? '');
         final isImg = mime.startsWith('image/');
         setState(() => _localDocs.add(_LocalFile(name: file.name, bytes: file.bytes!, isImage: isImg)));
-        _uploadFile(file.name, mime, file.bytes!, file.size);
+        _uploadFile(file.name, mime, file.bytes!, file.size, category: 'document');
       }
     }
   }
@@ -91,7 +91,7 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
     }
   }
 
-  void _uploadFile(String fileName, String mimeType, Uint8List bytes, int size) {
+  void _uploadFile(String fileName, String mimeType, Uint8List bytes, int size, {required String category}) {
     // Save as message
     ref.read(messagesProvider(widget.tripId).notifier).addMessage(Message(
       id: const Uuid().v4(),
@@ -103,7 +103,7 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
       fileType: mimeType,
       fileSize: size,
       fileBytes: bytes,
-      metadata: {'linkedItem': _itemLabel},
+      metadata: {'linkedItem': _itemLabel, 'category': category},
       createdAt: DateTime.now(),
     ));
 
@@ -113,7 +113,7 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
       role: 'user',
       content: '📎 $fileName → $_itemLabel',
       messageType: 'file',
-      metadata: {'fileName': fileName, 'fileType': mimeType, 'fileSize': size, 'linkedItem': _itemLabel},
+      metadata: {'fileName': fileName, 'fileType': mimeType, 'fileSize': size, 'linkedItem': _itemLabel, 'category': category},
     ).catchError((_) {});
 
     // Upload to Storage
@@ -123,6 +123,7 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
       mimeType: mimeType,
       bytes: bytes,
       linkedItem: _itemLabel,
+      category: category,
     ).then((_) {
       ref.read(attachmentsProvider(widget.tripId).notifier).load();
     }).catchError((_) {});
@@ -142,17 +143,26 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
     // Get DB attachments for this item
     final dbAttachments = ref.watch(attachmentsProvider(widget.tripId));
     final itemAtts = dbAttachments.where((a) => a['linked_item'] == _itemLabel).toList();
-    final dbPhotos = itemAtts.where((a) => (a['file_type'] ?? '').startsWith('image/')).toList();
-    final dbDocs = itemAtts.where((a) => !(a['file_type'] ?? '').startsWith('image/')).toList();
+    final dbPhotos = itemAtts.where((a) => a['category'] == 'photo').toList();
+    final dbDocs = itemAtts.where((a) => a['category'] == 'document').toList();
+    // Fallback: items without category use MIME type
+    final dbUncategorized = itemAtts.where((a) => a['category'] == null).toList();
+    final dbPhotosAll = [...dbPhotos, ...dbUncategorized.where((a) => (a['file_type'] ?? '').startsWith('image/'))];
+    final dbDocsAll = [...dbDocs, ...dbUncategorized.where((a) => !(a['file_type'] ?? '').startsWith('image/'))];
 
     // Also check in-memory file messages
     final messages = ref.watch(messagesProvider(widget.tripId));
     final memFiles = messages.where((m) =>
       m.messageType == MessageType.file &&
-      m.metadata?['linkedItem'] == _itemLabel
+      m.metadata?['linkedItem'] == _itemLabel &&
+      m.fileBytes != null
     ).toList();
-    final memPhotos = memFiles.where((f) => (f.fileType ?? '').startsWith('image/') && f.fileBytes != null).toList();
-    final memDocs = memFiles.where((f) => !(f.fileType ?? '').startsWith('image/') && f.fileBytes != null).toList();
+    final memPhotos = memFiles.where((f) => f.metadata?['category'] == 'photo').toList();
+    final memDocs = memFiles.where((f) => f.metadata?['category'] == 'document').toList();
+    // Fallback for old messages without category
+    final memUncategorized = memFiles.where((f) => f.metadata?['category'] == null).toList();
+    final memPhotosAll = [...memPhotos, ...memUncategorized.where((f) => (f.fileType ?? '').startsWith('image/'))];
+    final memDocsAll = [...memDocs, ...memUncategorized.where((f) => !(f.fileType ?? '').startsWith('image/'))];
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -229,15 +239,15 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
                 TextButton.icon(onPressed: _pickPhoto, icon: const Icon(Icons.add_photo_alternate, size: 18), label: const Text('추가')),
               ]),
               const SizedBox(height: 8),
-              if (_localPhotos.isEmpty && memPhotos.isEmpty && dbPhotos.isEmpty)
+              if (_localPhotos.isEmpty && memPhotosAll.isEmpty && dbPhotosAll.isEmpty)
                 _EmptyBox(text: '여행지에서 찍은 사진을 추가해보세요!')
               else
                 SizedBox(
                   height: 120,
                   child: ListView(scrollDirection: Axis.horizontal, children: [
-                    ...memPhotos.map((f) => _PhotoTile(bytes: f.fileBytes as Uint8List?)),
+                    ...memPhotosAll.map((f) => _PhotoTile(bytes: f.fileBytes as Uint8List?)),
                     ..._localPhotos.map((p) => _PhotoTile(bytes: p.bytes)),
-                    ...dbPhotos.map((a) => _PhotoTile(url: a['url'] as String?)),
+                    ...dbPhotosAll.map((a) => _PhotoTile(url: a['url'] as String?)),
                   ]),
                 ),
 
@@ -249,13 +259,13 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
                 TextButton.icon(onPressed: _pickDoc, icon: const Icon(Icons.upload_file, size: 18), label: const Text('추가')),
               ]),
               const SizedBox(height: 8),
-              if (_localDocs.isEmpty && memDocs.isEmpty && dbDocs.isEmpty)
+              if (_localDocs.isEmpty && memDocsAll.isEmpty && dbDocsAll.isEmpty)
                 _EmptyBox(text: '예약 확인서, 티켓, 영수증 등을 첨부하세요')
               else
                 ...[
-                  ...memDocs.map((f) => _DocTile(name: f.fileName ?? '', type: f.fileType ?? '', bytes: f.fileBytes as Uint8List?)),
+                  ...memDocsAll.map((f) => _DocTile(name: f.fileName ?? '', type: f.fileType ?? '', bytes: f.fileBytes as Uint8List?)),
                   ..._localDocs.map((d) => _DocTile(name: d.name, type: d.isImage ? 'image/jpeg' : 'application/pdf', bytes: d.bytes)),
-                  ...dbDocs.map((a) => _DocTile(name: a['file_name'] ?? '', type: a['file_type'] ?? '', url: a['url'] as String?)),
+                  ...dbDocsAll.map((a) => _DocTile(name: a['file_name'] ?? '', type: a['file_type'] ?? '', url: a['url'] as String?)),
                 ],
 
               // ── 📝 메모 ──

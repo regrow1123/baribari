@@ -18,6 +18,7 @@ export default async function handler(req: Request) {
     const tripId = formData.get("tripId") as string | null;
     const linkedItem = formData.get("linkedItem") as string | null;
     const messageId = formData.get("messageId") as string | null;
+    const category = formData.get("category") as string | null;
 
     if (!file || !tripId) {
       return new Response(JSON.stringify({ error: "file and tripId required" }), { status: 400, headers });
@@ -53,6 +54,7 @@ export default async function handler(req: Request) {
         file_size: file.size,
         storage_path: storagePath,
         ...(linkedItem ? { linked_item: linkedItem } : {}),
+        ...(category ? { category } : {}),
       })
       .select()
       .single();

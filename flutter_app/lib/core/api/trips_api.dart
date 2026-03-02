@@ -73,12 +73,14 @@ class TripsApi {
     required String mimeType,
     required Uint8List bytes,
     String? linkedItem,
+    String? category,
   }) async {
     final uri = Uri.parse('$_apiBase/api/upload');
     final request = http.MultipartRequest('POST', uri)
       ..fields['tripId'] = tripId
       ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
     if (linkedItem != null) request.fields['linkedItem'] = linkedItem;
+    if (category != null) request.fields['category'] = category;
 
     final streamed = await request.send();
     final body = await streamed.stream.bytesToString();
