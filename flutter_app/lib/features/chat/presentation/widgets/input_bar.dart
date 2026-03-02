@@ -48,7 +48,9 @@ class _InputBarState extends State<InputBar> {
 
         // Resize images > 1MB to keep upload small
         if (mimeType.startsWith('image/') && bytes.length > 1024 * 1024) {
+          debugPrint('[resize] before: ${bytes.length} bytes');
           bytes = await _resizeImage(bytes, maxDim: 1920);
+          debugPrint('[resize] after: ${bytes.length} bytes');
         }
 
         widget.onFilePick?.call(
