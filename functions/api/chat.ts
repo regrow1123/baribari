@@ -25,7 +25,7 @@ export const onRequest: PagesFunction = async (context) => {
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
       systemInstruction: SYSTEM_PROMPT,
-      generationConfig: { maxOutputTokens: 2048 },
+      generationConfig: { maxOutputTokens: 8192 },
     });
 
     const chatHistory = (history || []).map((msg: any) => ({

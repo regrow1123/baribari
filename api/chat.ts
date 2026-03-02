@@ -41,7 +41,7 @@ export default async function handler(req: Request): Promise<Response> {
       model: "gemini-2.0-flash",
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: {
-        maxOutputTokens: 2048,
+        maxOutputTokens: 8192,
       },
     });
 
