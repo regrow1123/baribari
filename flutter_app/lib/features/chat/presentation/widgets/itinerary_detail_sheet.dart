@@ -231,26 +231,6 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
                 ),
               ],
 
-              // ── 📸 사진 ──
-              const SizedBox(height: 24),
-              Row(children: [
-                const Text('📸 여행 사진', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                TextButton.icon(onPressed: _pickPhoto, icon: const Icon(Icons.add_photo_alternate, size: 18), label: const Text('추가')),
-              ]),
-              const SizedBox(height: 8),
-              if (_localPhotos.isEmpty && memPhotosAll.isEmpty && dbPhotosAll.isEmpty)
-                _EmptyBox(text: '여행지에서 찍은 사진을 추가해보세요!')
-              else
-                SizedBox(
-                  height: 120,
-                  child: ListView(scrollDirection: Axis.horizontal, children: [
-                    ...memPhotosAll.map((f) => _PhotoTile(bytes: f.fileBytes as Uint8List?)),
-                    ..._localPhotos.map((p) => _PhotoTile(bytes: p.bytes)),
-                    ...dbPhotosAll.map((a) => _PhotoTile(url: a['url'] as String?)),
-                  ]),
-                ),
-
               // ── 📄 문서/증빙 ──
               const SizedBox(height: 24),
               Row(children: [
@@ -282,6 +262,26 @@ class _ItineraryDetailSheetState extends ConsumerState<ItineraryDetailSheet> {
                   filled: true, fillColor: const Color(0xFFF5F7FA),
                 ),
               ),
+
+              // ── 📸 여행 사진 ──
+              const SizedBox(height: 24),
+              Row(children: [
+                const Text('📸 여행 사진', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                TextButton.icon(onPressed: _pickPhoto, icon: const Icon(Icons.add_photo_alternate, size: 18), label: const Text('추가')),
+              ]),
+              const SizedBox(height: 8),
+              if (_localPhotos.isEmpty && memPhotosAll.isEmpty && dbPhotosAll.isEmpty)
+                _EmptyBox(text: '여행지에서 찍은 사진을 추가해보세요!')
+              else
+                SizedBox(
+                  height: 120,
+                  child: ListView(scrollDirection: Axis.horizontal, children: [
+                    ...memPhotosAll.map((f) => _PhotoTile(bytes: f.fileBytes as Uint8List?)),
+                    ..._localPhotos.map((p) => _PhotoTile(bytes: p.bytes)),
+                    ...dbPhotosAll.map((a) => _PhotoTile(url: a['url'] as String?)),
+                  ]),
+                ),
               const SizedBox(height: 20),
             ],
           ),
