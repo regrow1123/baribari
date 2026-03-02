@@ -479,8 +479,6 @@ class _ItineraryItemTile extends StatelessWidget {
   }
 
   void _openDetail(BuildContext context) {
-    final itemLabel = '$dayLabel - ${item['title']}';
-    final linkedFiles = fileMessages.where((f) => f.metadata?['linkedItem'] == itemLabel).toList();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -489,8 +487,6 @@ class _ItineraryItemTile extends StatelessWidget {
         tripId: tripId,
         item: item,
         dayLabel: dayLabel,
-        linkedFiles: linkedFiles,
-        dbLinkedFiles: dbAttachments,
       ),
     );
   }
