@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/api/chat_api.dart';
@@ -189,8 +190,16 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
           ? state.sublist(state.length - 20)
           : state;
       final history = recentMessages
-          .where((m) => m.messageType == MessageType.text && m.role != 'system')
-          .map((m) => {'role': m.role, 'content': m.content})
+          .where((m) => m.role != 'system' && m.messageType != MessageType.file)
+          .map((m) {
+            // For itinerary/packing cards, include the JSON in history so LLM knows the plan
+            if (m.metadata != null && (m.messageType == MessageType.itineraryCard || m.messageType == MessageType.packingCard)) {
+              final tag = m.messageType == MessageType.itineraryCard ? 'itinerary' : 'packing';
+              final json = const JsonEncoder.withIndent(null).convert(m.metadata);
+              return {'role': m.role, 'content': '${m.content}\n\`\`\`json:$tag\n$json\n\`\`\`'};
+            }
+            return {'role': m.role, 'content': m.content};
+          })
           .toList();
 
       final responseText = await ChatApi.sendMessage(
